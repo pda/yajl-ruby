@@ -631,7 +631,10 @@ static yajl_event_t yajl_event_stream_next(yajl_event_stream_t parser, int pop) 
         }
 
         //printf("popping\n");
-        token = yajl_lex_lex(parser->lexer, (const unsigned char *)RSTRING_PTR(parser->buffer), RSTRING_LEN(parser->buffer), &parser->offset, (const unsigned char **)&event.buf, &event.len);
+        token = yajl_validator_lex(parser->validator, (const unsigned char *)RSTRING_PTR(parser->buffer), RSTRING_LEN(parser->buffer), &parser->offset, (const unsigned char **)&event.buf, &event.len);
+        if (parser->validator->error) {
+          rb_raise(cParseError, "invalid JSON token sequence");
+        }
         //printf("popped event %d\n", token);
 
         if (token == yajl_tok_eof) {
