@@ -667,8 +667,6 @@ static VALUE rb_yajl_projector_filter_subtree(yajl_event_stream_t parser, VALUE 
         return rb_yajl_projector_filter_object_subtree(parser, schema, event);
     }
 
-    rb_raise(cParseError, "expected left bracket or brace, actually read %d", event.token);
-    
     return Qnil;
 }
 
@@ -696,13 +694,6 @@ static VALUE rb_yajl_projector_filter_array_subtree(yajl_event_stream_t parser, 
         if (event.token == yajl_tok_comma) {
             event = yajl_event_stream_next(parser, 1);
             assert(event.token == yajl_tok_comma);
-
-            event = yajl_event_stream_next(parser, 0);
-            if (!(event.token == yajl_tok_string || event.token == yajl_tok_integer || event.token == yajl_tok_double || event.token == yajl_tok_null || event.token == yajl_tok_bool || event.token == yajl_tok_left_bracket || event.token == yajl_tok_left_brace)) {
-                rb_raise(cParseError, "read a comma, expected a value to follow, actually read %d", event.token);
-            }
-        } else if (event.token != yajl_tok_right_brace) {
-            rb_raise(cParseError, "didn't read a comma, expected closing array, actually read %d", event.token);
         }
     }
 
@@ -716,21 +707,13 @@ static VALUE rb_yajl_projector_filter_object_subtree(yajl_event_stream_t parser,
 
     while (1) {
         event = yajl_event_stream_next(parser, 1);
-
         if (event.token == yajl_tok_right_bracket) {
             break;
-        }
-
-        if (!(event.token == yajl_tok_string || event.token == yajl_tok_string_with_escapes)) {
-            rb_raise(cParseError, "Expected string, unexpected stream event %d", event.token);
         }
 
         VALUE key = rb_yajl_projector_build_string(parser, event);
 
         event = yajl_event_stream_next(parser, 1);
-        if (!(event.token == yajl_tok_colon)) {
-            rb_raise(cParseError, "Expected colon, unexpected stream event %d", event.token);
-        }
 
         // nil schema means reify the subtree from here on
         // otherwise if the schema has a key for this we want it
@@ -764,11 +747,6 @@ static VALUE rb_yajl_projector_filter_object_subtree(yajl_event_stream_t parser,
         if (event.token == yajl_tok_comma) {
             event = yajl_event_stream_next(parser, 1);
             assert(event.token == yajl_tok_comma);
-
-            event = yajl_event_stream_next(parser, 0);
-            if (event.token != yajl_tok_string) {
-                rb_raise(cParseError, "read a comma, expected a key to follow, actually read %d", event.token);
-            }
         } else if (event.token != yajl_tok_right_bracket) {
             rb_raise(cParseError, "read a value without tailing comma, expected closing bracket, actually read %d", event.token);
         }
@@ -787,26 +765,11 @@ static VALUE rb_yajl_projector_filter_object_subtree(yajl_event_stream_t parser,
     # Returns nothing.
 */
 static void rb_yajl_projector_ignore_value(yajl_event_stream_t parser) {
-    yajl_event_t value_event = yajl_event_stream_next(parser, 1);
+    yajl_event_t event = yajl_event_stream_next(parser, 1);
 
-    switch (value_event.token) {
-        case yajl_tok_null:
-        case yajl_tok_bool:
-        case yajl_tok_integer:
-        case yajl_tok_double:
-        case yajl_tok_string:
-        case yajl_tok_string_with_escapes:
-            return;
-        default:
-            break;
+    if (event.token == yajl_tok_left_brace || event.token == yajl_tok_left_bracket) {
+      rb_yajl_projector_ignore_container(parser);
     }
-
-    if (value_event.token == yajl_tok_left_brace || value_event.token == yajl_tok_left_bracket) {
-        rb_yajl_projector_ignore_container(parser);
-        return;
-    }
-
-    rb_raise(cStandardError, "unknown value type to ignore %d", value_event.token);
 }
 
 /*
