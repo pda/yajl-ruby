@@ -35,6 +35,8 @@ struct yajl_validator {
 
 // functions
 
+void yajl_validator_init(struct yajl_validator * val, yajl_lexer lexer);
+
 yajl_tok yajl_validator_lex(
   struct yajl_validator * val,
   const unsigned char * jsonText,

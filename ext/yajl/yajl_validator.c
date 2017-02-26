@@ -27,6 +27,13 @@ void yajl_validator_state_set(struct yajl_validator *, yajl_validator_state);
 
 // functions
 
+void yajl_validator_init(struct yajl_validator * val, yajl_lexer lexer) {
+  val->lexer = lexer;
+  val->ctx_stack[0] = yajl_validator_context_root;
+  val->ctx_stack_depth = 0;
+  val->state = yajl_validator_state_root;
+}
+
 yajl_tok yajl_validator_lex(
   struct yajl_validator * val,
   const unsigned char * jsonText,
