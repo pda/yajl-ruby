@@ -117,13 +117,13 @@ int yajl_validator_tok_is_terminal(yajl_tok t) {
 void yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
   yajl_validator_context ctx = yajl_validator_ctx(val);
   yajl_validator_state state = val->state;
-  printf(
-    "context:%s (depth:%d)  state:%s\n",
-    yajl_validator_context_name(ctx),
-    val->ctx_stack_depth,
-    yajl_validator_state_name(state)
-  );
-  printf("  token: %s\n", yajl_tok_name(tok));
+  // printf(
+  //   "context:%s (depth:%d)  state:%s\n",
+  //   yajl_validator_context_name(ctx),
+  //   val->ctx_stack_depth,
+  //   yajl_validator_state_name(state)
+  // );
+  // printf("  token: %s\n", yajl_tok_name(tok));
   yajl_validator_state_name(state);
   yajl_validator_context_name(ctx);
 
@@ -265,7 +265,7 @@ yajl_validator_context yajl_validator_ctx(struct yajl_validator * val) {
 }
 
 void yajl_validator_ctx_push(struct yajl_validator * val, yajl_validator_context ctx) {
-  printf("    pushing context: %s\n", yajl_validator_context_name(ctx));
+  // printf("    pushing context: %s\n", yajl_validator_context_name(ctx));
   val->ctx_stack_depth++;
   val->ctx_stack[val->ctx_stack_depth] = ctx;
 }
@@ -274,7 +274,7 @@ void yajl_validator_ctx_pop(struct yajl_validator * val) {
   assert(val->ctx_stack_depth > 0);
   val->ctx_stack_depth--;
   yajl_validator_context ctx = val->ctx_stack[val->ctx_stack_depth];
-  printf("    popped into context: %s\n", yajl_validator_context_name(ctx));
+  // printf("    popped into context: %s\n", yajl_validator_context_name(ctx));
   switch (ctx) {
     case yajl_validator_context_root:
       yajl_validator_state_set(val, yajl_validator_state_root_done);
@@ -292,6 +292,6 @@ void yajl_validator_ctx_pop(struct yajl_validator * val) {
 }
 
 void yajl_validator_state_set(struct yajl_validator * val, yajl_validator_state state) {
-  printf("    setting state: %s\n", yajl_validator_state_name(state));
+  // printf("    setting state: %s\n", yajl_validator_state_name(state));
   val->state = state;
 }
