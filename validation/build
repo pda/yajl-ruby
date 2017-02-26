@@ -15,4 +15,5 @@ clang \
   "$BASEDIR/ext/yajl/yajl_alloc.o" \
   "$BASEDIR/ext/yajl/yajl_lex.o" \
   "$BASEDIR/ext/yajl/yajl_buf.o" \
+  "$BASEDIR/ext/yajl/yajl_validator.o" \
   -o test
