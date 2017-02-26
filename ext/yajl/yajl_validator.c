@@ -15,7 +15,7 @@ static const char * yajl_validator_context_name(yajl_validator_context);
 
 static const char * yajl_validator_state_name(yajl_validator_state);
 
-int yajl_validator_token(struct yajl_validator *, yajl_tok);
+void yajl_validator_token(struct yajl_validator *, yajl_tok);
 
 yajl_validator_context yajl_validator_ctx(struct yajl_validator *);
 
@@ -32,6 +32,7 @@ void yajl_validator_init(struct yajl_validator * val, yajl_lexer lexer) {
   val->ctx_stack[0] = yajl_validator_context_root;
   val->ctx_stack_depth = 0;
   val->state = yajl_validator_state_root;
+  val->error = 0;
 }
 
 yajl_tok yajl_validator_lex(
@@ -51,7 +52,10 @@ yajl_tok yajl_validator_lex(
     outLen
   );
 
-  yajl_validator_token(val, tok);
+  // EOF special-cased because this is a chunking parser.
+  if (tok != yajl_tok_eof) {
+    yajl_validator_token(val, tok);
+  }
 
   return tok;
 }
@@ -110,11 +114,11 @@ int yajl_validator_tok_is_terminal(yajl_tok t) {
   return t == yajl_tok_eof || t == yajl_tok_error;
 }
 
-int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
+void yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
   yajl_validator_context ctx = yajl_validator_ctx(val);
   yajl_validator_state state = val->state;
   printf(
-    "ctx:%s (%d)  state:%s\n",
+    "context:%s (depth:%d)  state:%s\n",
     yajl_validator_context_name(ctx),
     val->ctx_stack_depth,
     yajl_validator_state_name(state)
@@ -135,7 +139,7 @@ int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
           yajl_validator_state_set(val, yajl_validator_state_object);
           break;
         default:
-          assert(0);
+          val->error = 1;
           break;
       }
       break;
@@ -144,7 +148,7 @@ int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
         case yajl_tok_eof:
           break;
         default:
-          assert(0);
+          val->error = 1;
           break;
       }
       break;
@@ -154,14 +158,17 @@ int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
         case yajl_tok_null:
         case yajl_tok_integer:
         case yajl_tok_double:
-        case yajl_tok_right_brace: // ]
-        case yajl_tok_right_bracket: // }
+        case yajl_tok_left_brace: // [
+        case yajl_tok_left_bracket: // {
         case yajl_tok_string:
         case yajl_tok_string_with_escapes:
           yajl_validator_state_set(val, yajl_validator_state_array_have_value);
           break;
+        case yajl_tok_right_brace: // ]
+          yajl_validator_ctx_pop(val);
+          break;
         default:
-          assert(0);
+          val->error = 1;
           break;
       }
       break;
@@ -174,7 +181,7 @@ int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
           yajl_validator_ctx_pop(val);
           break;
         default:
-          assert(0);
+          val->error = 1;
           break;
       }
       break;
@@ -188,7 +195,7 @@ int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
           yajl_validator_state_set(val, yajl_validator_state_object_have_key);
           break;
         default:
-          assert(0);
+          val->error = 1;
           break;
       }
       break;
@@ -198,7 +205,7 @@ int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
           yajl_validator_state_set(val, yajl_validator_state_object_have_sep);
           break;
         default:
-          assert(0);
+          val->error = 1;
           break;
       }
       break;
@@ -208,7 +215,7 @@ int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
           yajl_validator_state_set(val, yajl_validator_state_object_have_value);
           break;
         case yajl_tok_comment:
-          assert(0);
+          val->error = 1;
           break;
         case yajl_tok_left_brace: // [
           yajl_validator_ctx_push(val, yajl_validator_context_array);
@@ -226,7 +233,7 @@ int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
           yajl_validator_state_set(val, yajl_validator_state_object_have_value);
           break;
         default:
-          assert(0);
+          val->error = 1;
           break;
       }
       break;
@@ -239,16 +246,12 @@ int yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
           yajl_validator_ctx_pop(val);
           break;
         default:
-          assert(0);
+          val->error = 1;
           break;
       }
       break;
-    default:
-      assert(0);
-      break;
+    default: assert(0); // all cases handled
   }
-
-  return 1;
 }
 
 yajl_validator_context yajl_validator_ctx(struct yajl_validator * val) {

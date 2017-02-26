@@ -31,6 +31,7 @@ struct yajl_validator {
   yajl_validator_context ctx_stack[256]; // TODO: dynamic stack
   uint8_t ctx_stack_depth;               // TODO: dynamic stack
   yajl_validator_state state;
+  int error;
 };
 
 // functions
