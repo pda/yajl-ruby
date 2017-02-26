@@ -158,11 +158,17 @@ void yajl_validator_token(struct yajl_validator * val, yajl_tok tok) {
         case yajl_tok_null:
         case yajl_tok_integer:
         case yajl_tok_double:
-        case yajl_tok_left_brace: // [
-        case yajl_tok_left_bracket: // {
         case yajl_tok_string:
         case yajl_tok_string_with_escapes:
           yajl_validator_state_set(val, yajl_validator_state_array_have_value);
+          break;
+        case yajl_tok_left_brace: // [
+          yajl_validator_ctx_push(val, yajl_validator_context_array);
+          yajl_validator_state_set(val, yajl_validator_state_array);
+          break;
+        case yajl_tok_left_bracket: // {
+          yajl_validator_ctx_push(val, yajl_validator_context_object);
+          yajl_validator_state_set(val, yajl_validator_state_object);
           break;
         case yajl_tok_right_brace: // ]
           yajl_validator_ctx_pop(val);
