@@ -474,7 +474,6 @@ static VALUE rb_yajl_parser_init(int argc, VALUE * argv, VALUE self) {
  * block is for this method.
 */
 static VALUE rb_yajl_parser_parse(int argc, VALUE * argv, VALUE self) {
-    yajl_status stat;
     yajl_parser_wrapper * wrapper;
     VALUE rbufsize, input, blk;
     unsigned int len;
@@ -509,7 +508,7 @@ static VALUE rb_yajl_parser_parse(int argc, VALUE * argv, VALUE self) {
     }
 
     /* parse any remaining buffered data */
-    stat = yajl_parse_complete(wrapper->parser);
+    yajl_parse_complete(wrapper->parser);
 
     if (wrapper->parse_complete_callback != Qnil) {
         yajl_check_and_fire_callback((void *)self);
