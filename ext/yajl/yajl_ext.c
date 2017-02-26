@@ -26,6 +26,7 @@
 #include "yajl_alloc.h"
 #include "yajl_buf.h"
 #include "yajl_encode.h"
+#include "yajl_validator.h"
 #include "api/yajl_common.h"
 #include "assert.h"
 
@@ -578,6 +579,7 @@ struct yajl_event_stream_s {
     unsigned int offset;
 
     yajl_lexer lexer; // event source
+    struct yajl_validator * validator; // lexer decorator validating token sequence
 };
 
 typedef struct yajl_event_stream_s *yajl_event_stream_t;
@@ -923,6 +925,10 @@ static VALUE rb_yajl_projector_project(VALUE self, VALUE schema) {
     long buffer_size = FIX2LONG(rb_iv_get(self, "@buffer_size"));
     VALUE buffer = rb_str_new(0, buffer_size);
 
+    yajl_lexer lexer = yajl_lex_alloc(&allocFuncs, 0, 1);
+    struct yajl_validator val;
+    yajl_validator_init(&val, lexer);
+
     struct yajl_event_stream_s parser = {
         .funcs = &allocFuncs,
 
@@ -931,7 +937,8 @@ static VALUE rb_yajl_projector_project(VALUE self, VALUE schema) {
         .buffer = buffer,
         .offset = buffer_size,
 
-        .lexer = yajl_lex_alloc(&allocFuncs, 0, 1),
+        .lexer = lexer,
+        .validator = &val,
     };
 
     VALUE result = rb_yajl_projector_filter_subtree(&parser, schema, yajl_event_stream_next(&parser, 1));
