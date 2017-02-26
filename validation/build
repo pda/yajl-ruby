@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+BASEDIR="$(dirname "$(pwd)")"
+
+(cd "$BASEDIR/ext/yajl" && make)
+
+clang \
+  -Wall \
+  -Werror \
+  -I"$BASEDIR/ext/yajl" \
+  test.c \
+  "$BASEDIR/ext/yajl/yajl_alloc.o" \
+  "$BASEDIR/ext/yajl/yajl_lex.o" \
+  "$BASEDIR/ext/yajl/yajl_buf.o" \
+  -o test
